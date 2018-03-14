@@ -25,10 +25,6 @@ controller.hears([message.HELP],'direct_message', function(bot, message){
   bot.reply(message, response.HOW_CAN_I_HELP)
 });
 
-controller.hears([message.BUY],'direct_message', function(bot, message){
-  bot.reply(message, response.LOOK_UP)
-});
-
 controller.hears([message.BYE],'direct_message', function(bot, message){
   bot.reply(message, response.BYE)
 });
@@ -36,3 +32,7 @@ controller.hears([message.BYE],'direct_message', function(bot, message){
 controller.hears(['options','skills','functions','what can you do'],'direct_message', function(bot, message){
   bot.reply(message, response.MENU)
 });
+
+controller.hears('I want to buy (.*)','direct_message',function(bot,message){
+  bot.reply(message, 'sure, let me look it up for you.')
+})
