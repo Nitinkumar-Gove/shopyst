@@ -5,6 +5,9 @@
   "main": "index.js",
   "dependencies": {
     "botkit": "^0.6.11",
+    "botkit-middleware-luis": "^1.0.0",
+    "botkit-middleware-witai": "0.0.2",
+    "botkit-witai": "^1.1.0",
     "uuid": "^3.2.1"
   },
   "devDependencies": {},

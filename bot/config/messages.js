@@ -8,5 +8,7 @@ module.exports = {
   BUY : 'buy',
   BYE :'bye',
   DOING : 'doing',
-  HOW_ARE_yOU : 'how are you'
+  HOW_ARE_yOU : 'How are you',
+  THERE : 'there',
+  WANT_TO_BUY : 'I want to buy (.*)'
 };
