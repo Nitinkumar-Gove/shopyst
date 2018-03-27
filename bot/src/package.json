@@ -1,0 +1,26 @@
+{
+  "name": "shopyst",
+  "version": "1.0.1",
+  "description": "chatbot built using microsoft bot builder framework",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nitinkumar-Gove/shopyst.git"
+  },
+  "keywords": [
+    "chatbot"
+  ],
+  "author": "nitinkumar gove",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Nitinkumar-Gove/shopyst/issues"
+  },
+  "homepage": "https://github.com/Nitinkumar-Gove/shopyst#readme",
+  "dependencies": {
+    "botbuilder": "^3.14.1",
+    "restify": "^7.1.0"
+  }
+}
