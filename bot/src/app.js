@@ -28,7 +28,6 @@
     *  once we recieve the input from the user , we should store it in a
     *  'requirement-kind-of' json object which can be used during product search
     */
-    // console.log("[ LOGS ] ", "user input : ", results.productName);
     if(results.productName){
       let pname = session.privateConversationData.productName = results.productName;
       session.endConversation(`searching for ${pname} ...`);
@@ -63,7 +62,7 @@
           }
           else{
           session.send("Sorry, product name should be atleast of 3 characters.")
-          // starting over again ,
+          // starting over again
           session.replaceDialog('getProduct', {isReprompt : true});
           }
       }
