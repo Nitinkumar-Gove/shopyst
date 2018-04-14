@@ -28,3 +28,5 @@ Shopyst - A web based intelligent shopping assistant for ecommerce platforms.
 
 Helpful alternative tools : SourceTree, Git Desktop, GitKraken
 
+### Product Progress
+[Waffle Board](https://waffle.io/Nitinkumar-Gove/shopyst)
