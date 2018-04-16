@@ -1,0 +1,12 @@
+{
+  "name": "productAPI",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "amqp": "^0.2.6",
+    "crypto": "^1.0.1"
+  }
+}
