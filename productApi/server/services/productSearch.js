@@ -1,8 +1,11 @@
 var axios = require('axios');
 var config = require('../config/config');
+var mongo=require('./mongoDB');
+var url = 'mongodb://cmpe295:shopyst@ds253879.mlab.com:53879/shopyst' ;
 
 exports.productSearch= function(msg,callback){
   var res={};
+  userSearchHistory(msg.user)
   var url = 'http://svcs.ebay.com/services/search/FindingService/v1?'+
   'RESPONSE-DATA-FORMAT=JSON&SERVICE-VERSION=1.0.0&GLOBAL-ID=EBAY-US'+
   '&keywords='+msg.keywords+'&paginationInput.entriesPerPage='+msg.entriesPerPage;
@@ -20,4 +23,10 @@ exports.productSearch= function(msg,callback){
   .catch(function (error) {
     callback(null, error);
   });
+}
+
+function userSearchHistory (user) {
+  console.log('user search history', user);
+  // TODO: Update/create search history in user DB. 
+  return;
 }

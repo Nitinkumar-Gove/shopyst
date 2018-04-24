@@ -5,7 +5,8 @@ exports.productSearch= function(req,res){
   console.log('Reporting from product search route');
   var payload = {
     keywords: req.query.keywords,
-    entriesPerPage: req.query.entriesPerPage
+    entriesPerPage: req.query.entriesPerPage,
+    user: req.session.username
   }
 
   mq_client.make_request('product_search',payload, function(err,results){
