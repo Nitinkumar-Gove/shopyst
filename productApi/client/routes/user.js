@@ -14,7 +14,7 @@ exports.register= function(req,res){
       res.send(err);
     }
     else{
-      res.send(results.data)
+      res.send(results)
     }
   });
 }
@@ -60,6 +60,21 @@ exports.login = function (req,res){
       req.session.username=payload.email;
       console.log("checking session",req.session.username)
       res.send(results)
+    }
+  });
+}
+
+exports.delete = function (req,res){
+  console.log('Reporting from delete user');
+  var payload= {
+    email: req.params.email
+  };
+  mq_client.make_request('delete',payload, function(err,results){
+    if(err){
+      res.send(err);
+    }
+    else{
+      res.send(results.data)
     }
   });
 }

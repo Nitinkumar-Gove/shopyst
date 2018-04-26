@@ -5,7 +5,7 @@ var url = 'mongodb://cmpe295:shopyst@ds253879.mlab.com:53879/shopyst' ;
 
 exports.productSearch= function(msg,callback){
   var res={};
-  userSearchHistory(msg.user)
+  userSearchHistory(msg.user, msg.keywords)
   var url = 'http://svcs.ebay.com/services/search/FindingService/v1?'+
   'RESPONSE-DATA-FORMAT=JSON&SERVICE-VERSION=1.0.0&GLOBAL-ID=EBAY-US'+
   '&keywords='+msg.keywords+'&paginationInput.entriesPerPage='+msg.entriesPerPage;
@@ -25,8 +25,19 @@ exports.productSearch= function(msg,callback){
   });
 }
 
-function userSearchHistory (user) {
-  console.log('user search history', user);
-  // TODO: Update/create search history in user DB. 
-  return;
+function userSearchHistory (user, keywords) {
+  mongo.connect(url,function(){
+    var collection=mongo.collection('users');
+      collection.findOne({email:user}, function (err, result) {
+            var res={};
+            if (err) {
+              console.log(err);
+            } else if (result) {
+              var search_history=result.search_history;
+              search_history.push(keywords);
+              collection.update({email:user}, {$set: {search_history:search_history}});
+            }
+            return;
+          });
+    });
 }

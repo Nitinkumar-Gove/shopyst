@@ -21,6 +21,7 @@ app.post('/users', user.register);
 app.get('/users', user.getAll);
 app.get('/users/:email', user.getUser);
 app.post('/users/login', user.login);
+app.delete('/users/:email', user.delete);
 app.listen(3000, function(){
   console.log('Express server listening at localhost port 3000')
 })
