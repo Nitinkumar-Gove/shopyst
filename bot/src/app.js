@@ -1,168 +1,94 @@
-  var builder = require('botbuilder');
-  var restify = require('restify');
+  const builder = require('botbuilder');
+  const restify = require('restify');
+  const config = require('../config/config.js')
 
-  var logTag = "[ SHOPYST ] ";
-  var productQuery = {};
+  const logTag = "[ SHOPYST ] ";
+  let productQuery = {};
+  
   // setup restify server
-  var server = restify.createServer()
+  const server = restify.createServer()
   server.listen(1000, function(){
-    console.log(logTag,'listening to ',server.url);
+    console.log(logTag,' chat server listening at :  ',server.url);
   });
 
   // Create chat connector for communicating with the Bot Framework Service
-  var connector = new builder.ChatConnector({
+  const connector = new builder.ChatConnector({
     appId : '',
     appPassword : ''
   });
-
   // Listen for messages from users
   server.post('/api/messages', connector.listen());
 
-  var bot = new builder.UniversalBot(connector, [
-    // root controller dialog
-    (session, args, next) => {
-        session.send("Hello, I am shopyst. ");
-        session.send("I can help you find the best products.")
-        session.beginDialog('getProduct');
-  },
-  // extract productName
-  (session, results, next) => {
-    /* design note :
-    *  once we recieve the input from the user , we should store it in a
-    *  'requirement-kind-of' json object which can be used during product search
-    */
-    console.log(logTag, "product name : ", results);
-    if(results.productName){
-      let productName = session.privateConversationData.productName = results.productName;
-      console.log(logTag, `searching for ${productName} ...`);
-      session.beginDialog('getMinimumRating', {productName});
-    }
-    else{
-      // no valid response received - End the conversation
-      session.endConversation(`I didnt get you, lets start over`);
-    }
-  },
-  // extract minRating for product
-  (session, results, next) => {
-    console.log(logTag, "minimum rating : ", results);
-    if(results.minRating){
-      let minRating = session.privateConversationData.minRating = results.minRating;
-      session.beginDialog('getCondition');
-    }
-    else{
-      /* design note:
-      *  since all inputs except the product name are optional, even if the user
-      *  does not provide a valid input for the question, we should not end the
-      *  conversation
-      */
-      session.endConversation(`ending conversation ... in minimum rating dialog`);
-    }
-  },
-  (session, results, next) => {
-    console.log(logTag, "condition : ", results);
-    if(results.condition){
-      let condition = session.privateConversationData.condition = results.condition;
-      console.log(logTag, session.privateConversationData);
-      // this query will be used to fetch product list
-      productQuery = session.privateConversationData;
-      session.send("fetching products, hang on there !");
-      // session.beginDialog('getCondition');
-    }
-    else{
-      /* design note:
-      *  since all inputs except the product name are optional, even if the user
-      *  does not provide a valid input for the question, we should not end the
-      *  conversation
-      */
-      session.endConversation(`ending conversation ... in condition dialog`);
-    }
+  let bot = new builder.UniversalBot(connector);
+
+  // attach LUIS recognizer here 
+  let luisAppUrl = config.LUIS_MODEL_URL;
+  let shopystRecognizer = bot.recognizer(new builder.LuisRecognizer(luisAppUrl));
+  let shopystIntentsDialog = new builder.IntentDialog({
+    recognizers: [shopystRecognizer]
+  });
+
+  // attach none or default intent
+  bot.dialog('/', shopystIntentsDialog);
+  bot.dialog('/SearchProduct', shopystIntentsDialog);
+
+  // Handle Greeting intent.
+  shopystIntentsDialog.matches('Greeting', [
+    function (session, args) {
+      let menu = new builder.Message(session)
+      .addAttachment({
+        contentType: "application/vnd.microsoft.card.adaptive",
+        content: {
+            type: "AdaptiveCard",
+            body: [
+                {
+                    "type": "TextBlock",
+                    "text": "Search product"
+                },
+                {
+                    "type": "TextBlock",
+                    "text": "Add to cart",
+                },
+                {
+                    "type": "TextBlock",
+                    "text": "* Order product"
+                },
+                {
+                    "type": "TextBlock",
+                    "text": "Add to wishlist"
+                },
+                {
+                    "type": "TextBlock",
+                    "text": "Clear wishlist"
+                },
+                {
+                    "type": "TextBlock",
+                    "text": "Show my wishlist"
+                }
+            ]
+        }
+      });
+      session.send("Hello, Here's what I can do for you today")
+      session.send(menu);
+      session.send('where do you want to start ? ')
   }]);
 
-  // get product name, category, type
-  bot.dialog('getProduct',[
-    (session, args, next) => {
-      // retreive args , if any
-      if(args){
-        session.dialogData.isReprompt = args.isReprompt;
-      }
-      builder.Prompts.text(session, 'What are you looking for today?');
+  // Handle Search Product intent.
+  shopystIntentsDialog.matches('SearchProduct', [
+    function (session, args) {
+      session.send("sure, I can help you with that");
+      // extract the product category using Entity recognizer
+      let productTypeEntity = builder.EntityRecognizer.findEntity(args.entities, 'ProductType');
+      if (productTypeEntity) {
+          // productType entity detected, continue to next step
+          session.send("looking for ... " + productTypeEntity.entity);
+
+          // input product brands
+          builder.Prompts.text(session, 'Are there any specific brands which I should give preference?');
+      } 
     },
-    (session, results , next) => {
-      let productName = session.dialogData.productName = results.response;
-        console.log(logTag, "productName - " , productName )
-      /* design note :
-      *  we should have a list of products that we support searching for
-      *  this list should be used for validating user input in this dialog
-      *  eventually we should have a question set for each product category to
-      *  collect relevant information.
-      */
-      if(!productName || productName.trim().length < 3 ){
-          if(session.dialogData.isReprompt){
-            // already prompted once , close now
-             session.endDialogWithResult({ productName: '' });
-          }
-          else{
-          session.send("product name should be atleat 3 characters long")
-          // starting over again
-          session.replaceDialog('getProduct', {isReprompt : true});
-          }
-      }
-      else{
-        session.endDialogWithResult({productName});
-      }
+    function(session, results){
+      session.send(results.response);
     }
-  ]);
+]);
 
-  // get min rating for product search
-  bot.dialog('getMinimumRating',[
-    (session, args, next) => {
-        if(args){
-          session.dialogData.isReprompt = args.isReprompt;
-        }
-        builder.Prompts.number(session, 'please enter min user rating ( between 1-5 )');
-    },
-    (session, results, next) =>{
-      // extract user rating for validation
-      let minRating = results.response;
-      console.log(logTag, "minRating - " , minRating )
-      if(!minRating || minRating < 0 || minRating > 5){
-        if(session.dialogData.isReprompt){
-           session.endDialogWithResult({ minRating: ''});
-        }
-        else{
-          session.send("rating should be between 1-5")
-          session.replaceDialog('getMinimumRating', {isReprompt : true});
-        }
-      }
-      else{
-        session.endDialogWithResult({minRating});
-      }
-    }
-  ]);
-
-  // get condition for the product
-  bot.dialog('getCondition', [
-    (session, args, next) => {
-      builder.Prompts.choice(session, "please select product condition", "New|Refurbished|Used", { listStyle: builder.ListStyle.button });
-    },
-    (session, results, next) => {
-      let condition = results.response.entity;
-      session.endDialogWithResult({condition});
-    }
-  ]);
-
-
-  // yes/no dialog
-  bot.dialog('getYesOrNo',[
-    (session, args, next) => {
-      if(args){
-        let question = args.question;
-      }
-      builder.Prompts.choice(session, question, "Yes|No", { listStyle: builder.ListStyle.button });
-    },
-    (session, results, next) => {
-      let answer = results.response.entity;
-      session.endDialogWithResult({answer});
-
-    }
-  ]);
