@@ -1,6 +1,7 @@
   const builder = require('botbuilder');
   const restify = require('restify');
   const config = require('../config/config.js')
+  const findProducts = require('./controllers/productSearch.js')
 
   const logTag = "[ SHOPYST ] ";
   let productQuery = {};
@@ -28,6 +29,7 @@
   let shopystIntentsDialog = new builder.IntentDialog({
     recognizers: [shopystRecognizer]
   });
+
 
   // attach none or default intent
   bot.dialog('/', shopystIntentsDialog);
@@ -113,12 +115,19 @@
     function(session, results){
       // save minimum product rating
       session.userData.maxProductPrice = results.response;
+      
       // build search query 
-      session.send(JSON.stringify(session.userData));
+      console.log(JSON.stringify(session.userData));
 
-      // attach the card to the reply message
-       var card = createThumbnailCard(session);
-       var msg = new builder.Message(session).addAttachment(card);
+       // attach the card to the reply message
+       let products = findProducts({});
+       let productCards = products.map(product => {
+            return createHeroCard(session, product);
+       });
+
+       let msg = new builder.Message(session);
+       msg.attachmentLayout(builder.AttachmentLayout.carousel)
+       msg.attachments(productCards);
        session.send(msg);
        
       // end 
@@ -126,15 +135,16 @@
     }
 ]);
 
-function createThumbnailCard(session) {
-    return new builder.ThumbnailCard(session)
-        .title('BotFramework Thumbnail Card')
-        .subtitle('Your bots — wherever your users are talking')
-        .text('Build and connect intelligent bots to interact with your users naturally wherever they are, from text/sms to Skype, Slack, Office 365 mail and other popular services.')
-        .images([
-            builder.CardImage.create(session, 'https://sec.ch9.ms/ch9/7ff5/e07cfef0-aa3b-40bb-9baa-7c9ef8ff7ff5/buildreactionbotframework_960.jpg')
-        ])
-        .buttons([
-            builder.CardAction.openUrl(session, 'https://docs.microsoft.com/bot-framework/', 'Get Started')
-        ]);
+/*
+* function to create the card view for the carousel 
+*/
+function createHeroCard(session, product) {
+    return new builder.HeroCard(session)
+    .title(product.productName)
+    .subtitle(product.productDescription)
+    .text(product.productDescription2)
+    .images([builder.CardImage.create(session,product.productImage )])
+    .buttons([
+        builder.CardAction.imBack(session, "buy " + product.productName, "Buy")
+    ]);
 }
