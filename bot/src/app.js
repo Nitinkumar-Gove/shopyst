@@ -22,6 +22,7 @@
 
   let inMemoryStorage = new builder.MemoryBotStorage();
   let bot = new builder.UniversalBot(connector).set('storage', inMemoryStorage);
+  bot.set('persistConversationData', true);
 
   // attach LUIS recognizer here 
   let luisAppUrl = config.LUIS_MODEL_URL;
@@ -30,10 +31,15 @@
     recognizers: [shopystRecognizer]
   });
 
-
   // attach none or default intent
   bot.dialog('/', shopystIntentsDialog);
   bot.dialog('/SearchProduct', shopystIntentsDialog);
+  bot.dialog('/AddToCart', shopystIntentsDialog);
+  bot.dialog('/PlaceOrder', shopystIntentsDialog);
+  bot.dialog('/AddToWishlist', shopystIntentsDialog);
+  bot.dialog('/ShowWishlist', shopystIntentsDialog);
+  bot.dialog('/ClearWishlist', shopystIntentsDialog);
+  bot.dialog('/ExpressEmotion', shopystIntentsDialog);
 
   // Handle Greeting intent.
   shopystIntentsDialog.matches('Greeting', [
@@ -74,6 +80,12 @@
       session.send("Hello, Here's what I can do for you today")
       session.send(menu);
       session.send('where do you want to start ? ')
+
+      // initialize Feature Flags - to control features use during covnersation
+      if(!session.conversationData["featureFlagEnabled"]){
+         session.send("enabling feature flags")
+         enableFeatureFlag(session);
+      }
   }]);
 
   // Handle Search Product intent.
@@ -135,9 +147,74 @@
     }
 ]);
 
-/*
-* function to create the card view for the carousel 
-*/
+  // Handle Add to cart intent
+  shopystIntentsDialog.matches('AddToCart',[
+    function(session,args){
+        // check if user has selected a product
+        if(!session.conversationData["isProductSelected"]){
+            session.send("please select a product first");
+            return;  
+        }
+        session.send("adding to your cart ...");
+    }
+  ]);
+
+  // Handle Place the order intent.
+  shopystIntentsDialog.matches('PlaceOrder',[
+    function(session,args){
+        // check if user has added a product to cart
+        if(!session.conversationData["addToCart"]){
+            session.send("please add atleast one product to cart first");
+            return;  
+        }
+        session.send("placing your order ...");
+    }
+  ]);
+
+  // Handle Add to Wishlist intent
+  shopystIntentsDialog.matches('AddToWishlist',[
+    function(session,args){
+         // check if user has selected a product
+         if(!session.conversationData["isProductSelected"]){
+            session.send("please select a product first");
+            return;  
+        }
+        session.send("adding product to wishlist ...");
+    }
+  ]);
+
+  // Handle Show Wishlist intent
+  shopystIntentsDialog.matches('ShowWishlist',[
+    function(session,args){
+        // check if wishlist has item
+        if(!session.conversationData["addToWishlist"]){
+            session.send("your wishlist looks empty");
+            return;  
+        }
+        session.send("showing wishlist ...");
+    }
+  ]);
+
+  // Handle Clear Wishlist intent
+  shopystIntentsDialog.matches('ClearWishlist',[
+    function(session,args){
+        // check if wishlist has item
+        if(!session.conversationData["addToWishlist"]){
+            session.send("your wishlist looks empty");
+            return;  
+        }
+        session.send("clearning wishlist ...");
+    }
+  ]);
+
+  // Handle ExpressEmotion intent
+  shopystIntentsDialog.matches('ExpressEmotion',[
+    function(session,args){
+        session.send("Ignoring remark ...");
+    }
+  ]);
+
+// function to create the card view for the carousel 
 function createHeroCard(session, product) {
     return new builder.HeroCard(session)
     .title(product.productName)
@@ -145,6 +222,19 @@ function createHeroCard(session, product) {
     .text(product.productDescription2)
     .images([builder.CardImage.create(session,product.productImage )])
     .buttons([
-        builder.CardAction.imBack(session, "buy " + product.productName, "Buy")
+        builder.CardAction.imBack(session,"@AddToCart " + product.productName, "Add To Cart")
     ]);
+}
+
+// function to enable feature flags for the conversation
+function enableFeatureFlag(session){
+    // initialize all the flags to false
+    session.conversationData["isProductSelected"] = false;
+    session.conversationData["addToCart"] = false;
+    session.conversationData["placeOrder"] = false;
+    session.conversationData["addToWishlist"] = false;
+    session.conversationData["showWishlist"] = false;
+    session.conversationData["clearWishlist"] = false;
+    // feature flags initialized 
+    session.conversationData["featureFlagEnabled"] = true;
 }
